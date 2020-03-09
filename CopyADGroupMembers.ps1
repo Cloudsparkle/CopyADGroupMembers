@@ -15,7 +15,7 @@
   Author:         Bart Jacobs - @Cloudsparkle
   Creation Date:  09/03/2020
   Purpose/Change: Copy AD Group members to another group
-  
+
 .EXAMPLE
   None
 #>
@@ -27,19 +27,24 @@ $DestinationGroup = ""
 
 Add-Type -AssemblyName PresentationFramework
 
+#Get the AD DomainName
 $ADForestInfo = Get-ADForest
 $SelectedDomain = $ADForestInfo.Domains | Out-GridView -passthru -Title "Select AD Domain"
 
+#Check for a valid DomainName
 if ($SelectedDomain -eq $null)
 {
 [System.Windows.MessageBox]::Show("AD Domain not selected","Error","OK","Error")
 exit
 }
 
+
 $dc = Get-ADDomainController -DomainName $SelectedDomain -Discover -NextClosestSite
+
+
 $ADGroupList = Get-ADGroup -filter * -Server $SelectedDomain | sort name | select Name
-$SourceGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name who's members needs to be copied" 
-$DestinationGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name that needs to be populated" 
+$SourceGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name who's members needs to be copied"
+$DestinationGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name that needs to be populated"
 
 if ($SourceGroup -eq $null)
 {
@@ -61,7 +66,7 @@ exit 1
 
 $member = Get-ADGroupMember -Identity $SourceGroup.Name -Server $dc.HostName[0]
 
-Try 
+Try
 {
 Add-ADGroupMember -Identity $DestinationGroup.name -Members $member -Server $dc.HostName[0]
 $message = "Members of AD Group " + $SourceGroup.name + "have been copied to AD Group " + $DestinationGroup.Name
