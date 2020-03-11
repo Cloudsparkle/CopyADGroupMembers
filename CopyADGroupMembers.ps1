@@ -29,7 +29,7 @@ Add-Type -AssemblyName PresentationFramework
 
 #Get the AD DomainName
 $ADForestInfo = Get-ADForest
-$SelectedDomain = $ADForestInfo.Domains | Out-GridView -passthru -Title "Select AD Domain"
+$SelectedDomain = $ADForestInfo.Domains | Out-GridView -Title "Select AD Domain" -OutputMode Single
 
 #Check for a valid DomainName
 if ($SelectedDomain -eq $null)
@@ -43,8 +43,8 @@ $dc = Get-ADDomainController -DomainName $SelectedDomain -Discover -NextClosestS
 
 #Get all groups from selected and select source and destination groups
 $ADGroupList = Get-ADGroup -filter * -Server $SelectedDomain | sort name | select Name
-$SourceGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name who's members needs to be copied"
-$DestinationGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name that needs to be populated"
+$SourceGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name who's members needs to be copied" -OutputMode Single
+$DestinationGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name that needs to be populated" -OutputMode Single
 
 #Basic checks for selecte groups
 if ($SourceGroup -eq $null)
