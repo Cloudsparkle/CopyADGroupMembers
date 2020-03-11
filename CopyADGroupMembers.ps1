@@ -38,14 +38,15 @@ if ($SelectedDomain -eq $null)
 exit
 }
 
-
+#Find the right AD Domain Controller
 $dc = Get-ADDomainController -DomainName $SelectedDomain -Discover -NextClosestSite
 
-
+#Get all groups from selected and select source and destination groups
 $ADGroupList = Get-ADGroup -filter * -Server $SelectedDomain | sort name | select Name
 $SourceGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name who's members needs to be copied"
 $DestinationGroup = $ADGroupList | Out-GridView -PassThru -Title "Select the AD Group Name that needs to be populated"
 
+#Basic checks for selecte groups
 if ($SourceGroup -eq $null)
 {
 [System.Windows.MessageBox]::Show("Source group not selected","Error","OK","Error")
@@ -64,8 +65,10 @@ if ($SourceGroup -eq $DestinationGroup)
 exit 1
 }
 
+#Fetch all members from selecte source group
 $member = Get-ADGroupMember -Identity $SourceGroup.Name -Server $dc.HostName[0]
 
+#Try to populate the selected destination group with members
 Try
 {
 Add-ADGroupMember -Identity $DestinationGroup.name -Members $member -Server $dc.HostName[0]
