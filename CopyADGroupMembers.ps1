@@ -33,10 +33,10 @@ $SelectedDomain = $ADForestInfo.Domains | Out-GridView -Title "Select AD Domain"
 
 #Check for a valid DomainName
 if ($SelectedDomain -eq $null)
-{
-[System.Windows.MessageBox]::Show("AD Domain not selected","Error","OK","Error")
-exit
-}
+  {
+    [System.Windows.MessageBox]::Show("AD Domain not selected","Error","OK","Error")
+    exit
+  }
 
 #Find the right AD Domain Controller
 $dc = Get-ADDomainController -DomainName $SelectedDomain -Discover -NextClosestSite
@@ -44,38 +44,38 @@ $dc = Get-ADDomainController -DomainName $SelectedDomain -Discover -NextClosestS
 #Get all groups from selected and select source and destination groups
 $ADGroupList = Get-ADGroup -filter * -Server $SelectedDomain | sort name | select Name
 $SourceGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name who's members needs to be copied" -OutputMode Single
-$DestinationGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name that needs to be populated" -OutputMode Single
+$DestinationGroup = $ADGroupList | Out-GridView write-Title "Select the AD Group Name that needs to be populated" -OutputMode Single
 
 #Basic checks for selecte groups
 if ($SourceGroup -eq $null)
-{
-[System.Windows.MessageBox]::Show("Source group not selected","Error","OK","Error")
-exit 1
-}
+  {
+    [System.Windows.MessageBox]::Show("Source group not selected","Error","OK","Error")
+    exit 1
+  }
 
 if ($DestinationGroup -eq $null)
-{
-[System.Windows.MessageBox]::Show("Destination group not selected","Error","OK","Error")
-exit 1
-}
+  {
+    [System.Windows.MessageBox]::Show("Destination group not selected","Error","OK","Error")
+    exit 1
+  }
 
 if ($SourceGroup -eq $DestinationGroup)
-{
-[System.Windows.MessageBox]::Show("Source and Destination groups can not be the same","Error","OK","Error")
-exit 1
-}
+  {
+    [System.Windows.MessageBox]::Show("Source and Destination groups can not be the same","Error","OK","Error")
+    exit 1
+  }
 
 #Fetch all members from selecte source group
 $member = Get-ADGroupMember -Identity $SourceGroup.Name -Server $dc.HostName[0]
 
 #Try to populate the selected destination group with members
 Try
-{
-Add-ADGroupMember -Identity $DestinationGroup.name -Members $member -Server $dc.HostName[0]
-$message = "Members of AD Group " + $SourceGroup.name + "have been copied to AD Group " + $DestinationGroup.Name
-[System.Windows.MessageBox]::Show($message,"Finished","OK","Asterisk")
-}
+  {
+    Add-ADGroupMember -Identity $DestinationGroup.name -Members $member -Server $dc.HostName[0]
+    $message = "Members of AD Group " + $SourceGroup.name + "have been copied to AD Group " + $DestinationGroup.Name
+    [System.Windows.MessageBox]::Show($message,"Finished","OK","Asterisk")
+  }
 Catch
-{
-[System.Windows.MessageBox]::Show("AD Group membership copy failed","Error","OK","Error")
-}
+  {
+    [System.Windows.MessageBox]::Show("AD Group membership copy failed","Error","OK","Error")
+  }
