@@ -11,7 +11,7 @@
 .OUTPUTS
   None
 .NOTES
-  Version:        1.0
+  Version:        1.1
   Author:         Bart Jacobs - @Cloudsparkle
   Creation Date:  09/03/2020
   Purpose/Change: Copy AD Group members to another group
@@ -72,7 +72,7 @@ $member = Get-ADGroupMember -Identity $SourceGroup.Name -Server $dc.HostName[0]
 Try
   {
     Add-ADGroupMember -Identity $DestinationGroup.name -Members $member -Server $dc.HostName[0]
-    $message = "Members of AD Group " + $SourceGroup.name + "have been copied to AD Group " + $DestinationGroup.Name
+    $message = "Members of AD Group " + $SourceGroup.name + " have been copied to AD Group " + $DestinationGroup.Name
     [System.Windows.MessageBox]::Show($message,"Finished","OK","Asterisk")
   }
 Catch
