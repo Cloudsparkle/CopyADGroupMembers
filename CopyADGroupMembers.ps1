@@ -44,7 +44,7 @@ $dc = Get-ADDomainController -DomainName $SelectedDomain -Discover -NextClosestS
 #Get all groups from selected and select source and destination groups
 $ADGroupList = Get-ADGroup -filter * -Server $SelectedDomain | sort name | select Name
 $SourceGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name who's members needs to be copied" -OutputMode Single
-$DestinationGroup = $ADGroupList | Out-GridView write-Title "Select the AD Group Name that needs to be populated" -OutputMode Single
+$DestinationGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name that needs to be populated" -OutputMode Single
 
 #Basic checks for selecte groups
 if ($SourceGroup -eq $null)
