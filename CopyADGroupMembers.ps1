@@ -1,9 +1,9 @@
 ﻿#requires -modules ActiveDirectory
 <#
 .SYNOPSIS
-  Copy AD group members from one AD group to another AD group in the same domain
+  Copy AD group members from one AD group to other AD group(s) in the same domain
 .DESCRIPTION
-  This script provides a GUI to quickly copy AD group members to another existing group in the same domain. Multi-domain forests are supported, the script will query for the AD domain.
+  This script provides a GUI to quickly copy AD group members to other existing group(s) in the same domain. Multi-domain forests are supported, the script will query for the AD domain.
 .PARAMETER <Parameter_Name>
     None
 .INPUTS
@@ -11,10 +11,10 @@
 .OUTPUTS
   None
 .NOTES
-  Version:        1.2
+  Version:        2.0
   Author:         Bart Jacobs - @Cloudsparkle
-  Creation Date:  09/03/2020
-  Purpose/Change: Copy AD Group members to another group
+  Creation Date:  20/02/23
+  Purpose/Change: Copy AD Group members to other group(s)
 
 .EXAMPLE
   None
@@ -45,59 +45,14 @@ if ($SelectedDomain -eq $null)
   }
 
 #Find the right AD Domain Controller
-$dc = Get-ADDomainController -DomainName $SelectedDomain -Discover -NextClosestSite
+$dc = Get-ADDomainController -DomainName $SelectedDomain -Discover
+$dc = $dc.HostName
 
 #Get all groups from selected and select source and destination groups
-$ADGroupList = Get-ADGroup -filter * -Server $SelectedDomain | sort name | select Name
-$SourceGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name who's members needs to be copied" -OutputMode Single
-$DestinationGroup = $ADGroupList | Out-GridView -Title "Select the AD Group Name that needs to be populated" -OutputMode Single
-
-#Basic checks for selecte groups
-if ($SourceGroup -eq $null)
-  {
-    $msgBoxInput = [System.Windows.MessageBox]::Show("Source group not selected","Error","OK","Error")
-    switch  ($msgBoxInput)
-    {
-      "OK"
-      {
-        Exit 1
-      }
-    }
-  }
-
-if ($DestinationGroup -eq $null)
-  {
-    $msgBoxInput = [System.Windows.MessageBox]::Show("Destination group not selected","Error","OK","Error")
-    switch  ($msgBoxInput)
-    {
-      "OK"
-      {
-        Exit 1
-      }
-    }
-  }
-
-if ($SourceGroup -eq $DestinationGroup)
-  {
-    $msgBoxInput = [System.Windows.MessageBox]::Show("Source and Destination groups can not be the same","Error","OK","Error")
-    switch  ($msgBoxInput)
-    {
-      "OK"
-      {
-        Exit 1
-      }
-    }
-  }
-
-#Fetch all members from selecte source group
-$member = Get-ADGroupMember -Identity $SourceGroup.Name -Server $dc.HostName[0]
-
-#Try to populate the selected destination group with members
-Try
+$ADGroupList = Get-ADGroup -filter * -Server $dc[0] | sort-object name | select-object Name
+if ($null -eq $ADGroupList)
 {
-  Add-ADGroupMember -Identity $DestinationGroup.name -Members $member -Server $dc.HostName[0]
-  $message = "Members of AD Group " + $SourceGroup.name + " have been copied to AD Group " + $DestinationGroup.Name
-  $msgBoxInput = [System.Windows.MessageBox]::Show($message,"Finished","OK","Asterisk")
+  $msgBoxInput = [System.Windows.MessageBox]::Show("Error getting AD groups","Error","OK","Error")
   switch  ($msgBoxInput)
   {
     "OK"
@@ -106,14 +61,83 @@ Try
     }
   }
 }
-Catch
+
+$SourceGroup = $ADGroupList | Out-GridView -Title "Select the SOURCE AD Group" -OutputMode Single
+if ($null -eq $SourceGroup)
 {
-  $msgBoxInput = [System.Windows.MessageBox]::Show("AD Group membership copy failed","Error","OK","Error")
+  $msgBoxInput = [System.Windows.MessageBox]::Show("Source group not selected","Error","OK","Error")
   switch  ($msgBoxInput)
   {
     "OK"
     {
       Exit 1
+    }
+  }
+}
+else
+{
+  $SourceGroupName = $SourceGroup.name
+}
+
+$DestinationGroups = $ADGroupList | Out-GridView -Title "Select the DESTINATION AD Group(s)" -OutputMode Multiple
+
+if ($null -eq $DestinationGroups)
+{
+  $msgBoxInput = [System.Windows.MessageBox]::Show("Destination group(s) not selected","Error","OK","Error")
+  switch  ($msgBoxInput)
+  {
+    "OK"
+    {
+      Exit 1
+    }
+  }
+}
+
+#Fetch all members from selecte source group
+$member = Get-ADGroupMember -Identity $SourceGroup.Name -Server $dc[0]
+if ($null -eq $member)
+{
+  $msgBoxInput = [System.Windows.MessageBox]::Show("Error getting members of $SourceGroupName, exiting...","Error","OK","Error")
+  switch  ($msgBoxInput)
+  {
+    "OK"
+    {
+      Exit 1
+    }
+  }
+}
+
+foreach ($DestinationGroup in $DestinationGroups)
+{
+  if ($SourceGroup -eq $DestinationGroup)
+  {
+    #Write-Host "SOURCE AD Group also selected as DESTINATION, skipping..." -ForegroundColor Red
+    Continue
+  }
+
+  #Try to populate the selected destination group with members
+  Try
+  {
+    Add-ADGroupMember -Identity $DestinationGroup.name -Members $member -Server $dc[0]
+    $message = "Members of AD Group " + $SourceGroup.name + " have been copied to AD Group " + $DestinationGroup.Name
+    $msgBoxInput = [System.Windows.MessageBox]::Show($message,"Finished","OK","Asterisk")
+    switch  ($msgBoxInput)
+    {
+      "OK"
+      {
+        Exit 1
+      }
+    }
+  }
+  Catch
+  {
+    $msgBoxInput = [System.Windows.MessageBox]::Show("AD Group membership copy failed","Error","OK","Error")
+    switch  ($msgBoxInput)
+    {
+      "OK"
+      {
+        Exit 1
+      }
     }
   }
 }
